@@ -1,0 +1,14 @@
+name: Daily Panel Ping
+
+on:
+  schedule:
+    - cron: '0 12 * * *' 
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send GET Request to Netlify
+        run: |
+          curl -i -X GET https://ТВОЙ_САЙТ.netlify.app/.netlify/functions/ping
