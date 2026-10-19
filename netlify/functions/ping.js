@@ -10,25 +10,32 @@ export default async (req, context) => {
     .map(([key, value]) => `${key}=${value}`)
     .join("; ");
 
-  const url = "https://panel.plugged.host/api/client/servers/09a5751e-f743-4065-ba32-d5f4d235fdc9/resources";
+  // Мы стучимся на страницу сервера, а не в API
+  const url = "https://panel.plugged.host/server/09a5751e-f743-4065-ba32-d5f4d235fdc9";
 
   try {
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Cookie": cookieHeader,
-        "Accept": "application/json",
+        "Accept": "text/html,application/xhtml+xml",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
       }
     });
 
-    const data = await response.json();
+    const html = await response.text();
 
-    if (!response.ok) {
-      return new Response(`Ошибка панели: ${response.status} ${JSON.stringify(data)}`, { status: 500 });
+    // Если в HTML есть форма логина (login) или нет имени пользователя, значит куки не прошли
+    if (html.includes("login") || html.includes("Sign in")) {
+       return new Response("Ошибка: куки не работают, выкинуло на страницу логина", { status: 401 });
     }
 
-    return new Response(`Пинг успешен. Сервер жив. Статус: ${data.attributes.current_state}`, { status: 200 });
+    // Если видим название сервера или твой ник, значит мы залогинены
+    if (html.includes("merlin") || html.includes("devidbackoff")) {
+       return new Response("Пинг успешен. Страница сервера загружена.", { status: 200 });
+    }
+
+    return new Response(`Неизвестный ответ. Длина: ${html.length}`, { status: 500 });
 
   } catch (error) {
     return new Response(`Крах сети: ${error.message}`, { status: 500 });
