@@ -1,3 +1,5 @@
+import { HttpsProxyAgent } from "https-proxy-agent";
+
 export default async (req, context) => {
   const COOKIES = {
     "cf_clearance": "seY0n7Aoklb7bQddPzl861P3LK.NFtJhB3TK.91fXWI-1792368260-1.2.1.1-eYhIOi.I3NhK5cnojvFqTc1m1ufZ5Bjus9dAU41Ea7FB30idkYP1uOCWQKu0iFCXKq_pChIey2eqNJsQ2Cs5ZjKHtbTd5TegAhPTxb93ER6NgIskUT1J_tcnZep8Y.f04xVSpkQiOAOjsFlMMdPEA9qoN7fQ4Fip9yWqYhvfuc.qUDLolGumo9sM8sSPPg4W2vBccjSvWYxqlnWcqaOkFE0j1R5HaitVtAde6j5pYE83WBW.HcdJLsp5XYeMHuRQ2BoRK6Wln6A57FGqsupE.BnxWPG7sp0EERK8py7oYPZWFv5aXJ1BoUQbDHU9v.UMtzP9NsztL0IUBWLzNZmGJceeLqifxHf1oO_eexafeF0",
@@ -11,10 +13,15 @@ export default async (req, context) => {
     .join("; ");
 
   const url = "https://panel.plugged.host/server/09a5751e-f743-4065-ba32-d5f4d235fdc9";
+  
+  // Твой прокси
+  const proxyUrl = "http://zxWDzBWhtaAE:39U6bKxrjhLx@177.202.194.41:63276";
+  const agent = new HttpsProxyAgent(proxyUrl);
 
   try {
     const response = await fetch(url, {
       method: "GET",
+      agent: agent, // Передаем прокси в fetch (в Node 18+ это работает)
       headers: {
         "Cookie": cookieHeader,
         "Accept": "text/html,application/xhtml+xml",
@@ -24,7 +31,15 @@ export default async (req, context) => {
 
     const html = await response.text();
     
-    // Вернем первые 500 символов ответа, чтобы понять, что там
+    if (response.status === 403) {
+        return new Response(`Cloudflare заблокировал даже через прокси. Статус: 403`, { status: 403 });
+    }
+
+    // Проверка на успех
+    if (html.includes("merlin") || html.includes("devidbackoff")) {
+       return new Response(`Пинг успешен через прокси! Статус: ${response.status}`, { status: 200 });
+    }
+
     return new Response(`Статус: ${response.status}\n\nОтвет:\n${html.slice(0, 500)}`, { status: 200 });
 
   } catch (error) {
