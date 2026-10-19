@@ -10,7 +10,6 @@ export default async (req, context) => {
     .map(([key, value]) => `${key}=${value}`)
     .join("; ");
 
-  // Мы стучимся на страницу сервера, а не в API
   const url = "https://panel.plugged.host/server/09a5751e-f743-4065-ba32-d5f4d235fdc9";
 
   try {
@@ -24,18 +23,9 @@ export default async (req, context) => {
     });
 
     const html = await response.text();
-
-    // Если в HTML есть форма логина (login) или нет имени пользователя, значит куки не прошли
-    if (html.includes("login") || html.includes("Sign in")) {
-       return new Response("Ошибка: куки не работают, выкинуло на страницу логина", { status: 401 });
-    }
-
-    // Если видим название сервера или твой ник, значит мы залогинены
-    if (html.includes("merlin") || html.includes("devidbackoff")) {
-       return new Response("Пинг успешен. Страница сервера загружена.", { status: 200 });
-    }
-
-    return new Response(`Неизвестный ответ. Длина: ${html.length}`, { status: 500 });
+    
+    // Вернем первые 500 символов ответа, чтобы понять, что там
+    return new Response(`Статус: ${response.status}\n\nОтвет:\n${html.slice(0, 500)}`, { status: 200 });
 
   } catch (error) {
     return new Response(`Крах сети: ${error.message}`, { status: 500 });
